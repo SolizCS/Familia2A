@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego Interactivo de Química: Familia 2A</title>
+    <!-- Tailwind CSS CDN for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* Custom styles for the game */
+        body {
+            font-family: "Inter", sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-y: auto; /* Allow scrolling if content overflows */
+        }
+        .game-container {
+            background-color: #ffffff; /* White background for the game area */
+            border-radius: 1.5rem; /* More rounded corners */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            padding: 2.5rem; /* Increased padding */
+            max-width: 90%; /* Max width for responsiveness */
+            width: 1200px; /* Base width */
+            text-align: center;
+            min-height: 700px; /* Minimum height for consistent layout */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Specific styles for buttons */
+        .btn {
+            @apply px-8 py-4 text-xl font-bold rounded-xl shadow-lg transition-all duration-300 ease-in-out transform hover:scale-105;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); /* Gradient background */
+            color: white;
+            border: none;
+            cursor: pointer;
+            outline: none;
+            animation: pulse 2s infinite; /* Pulse animation */
+        }
+        .btn:hover {
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        .btn-green {
+            background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%);
+        }
+        .btn-red {
+            background: linear-gradient(135deg, #F44336 0%, #D32F2F 100%);
+        }
+        .btn-orange {
+            background: linear-gradient(135deg, #FF9800 0%, #FB8C00 100%);
+        }
+
+        /* Keyframes for pulse animation */
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 15px rgba(102, 126, 234, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+            }
+        }
+
+        /* Card styles for Part 2 */
+        .card {
+            @apply flex flex-col justify-center items-center p-6 bg-gradient-to-br from-blue-300 to-blue-500 text-white rounded-xl shadow-lg cursor-pointer transition-transform duration-200 ease-in-out;
+            min-width: 150px; /* Fixed width for cards */
+            min-height: 150px; /* Fixed height for cards */
+        }
+        .card:hover {
+            transform: scale(1.05);
+        }
+        .card.selected {
+            border: 5px solid #FFD700; /* Gold border for selected cards */
+        }
+        .card.correct {
+            background: linear-gradient(135deg, #4CAF50 0%, #8BC34A 100%); /* Green for correct */
+            pointer-events: none; /* Disable interaction after selection */
+        }
+        .card.incorrect {
+            background: linear-gradient(135deg, #F44336 0%, #D32F2F 100%); /* Red for incorrect */
+            pointer-events: none; /* Disable interaction after selection */
+        }
+
+        /* Drag & Drop styles for Part 3 */
+        .draggable-item, .droppable-area {
+            @apply p-4 m-2 border-2 border-dashed rounded-lg text-lg font-semibold cursor-grab bg-white shadow-sm;
+            min-width: 180px;
+            min-height: 60px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none; /* Prevent text selection during drag */
+        }
+        .droppable-area {
+            border-style: solid; /* Solid border for droppable areas */
+            border-color: #cbd5e1; /* Gray border */
+            background-color: #f8fafc; /* Light blue-gray background */
+        }
+        .droppable-area.drag-over {
+            border-color: #667eea; /* Highlight on drag over */
+            background-color: #e0e7ff; /* Light blue background */
+        }
+        .droppable-area.correct-match {
+            background-color: #dcfce7; /* Light green for correct match */
+            border-color: #22c55e;
+        }
+        .droppable-area.incorrect-match {
+            background-color: #fee2e2; /* Light red for incorrect match */
+            border-color: #ef4444;
+        }
+
+        /* Utility classes for hiding sections */
+        .hidden {
+            display: none;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 1.5rem;
+                min-height: auto;
+            }
+            .btn {
+                padding: 0.75rem 1.5rem;
+                font-size: 1.1rem;
+            }
+            .card {
+                min-width: 100px;
+                min-height: 100px;
+                padding: 0.5rem;
+                font-size: 0.8rem;
+            }
+            .draggable-item, .droppable-area {
+                min-width: 120px;
+                min-height: 40px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-500 to-blue-600">
+    <div class="game-container">
+        <!-- Main Interface -->
+        <div id="main-menu" class="space-y-8 p-8">
+            <h1 class="text-6xl font-extrabold text-gray-800 mb-8 tracking-tight">Química Interactiva: Familia 2A</h1>
+            <p class="text-xl text-gray-700 max-w-2xl mx-auto mb-12 leading-relaxed">
+                Bienvenido al juego interactivo sobre los elementos de la Familia 2A (Alcalinotérreos).
+                Utiliza los botones a continuación para navegar entre las diferentes partes del juego.
+                ¡Aprende, juega y evalúa tus conocimientos!
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <button class="btn btn-blue-500" onclick="showPart('part1-review')">
+                    <i class="fas fa-book-open mr-3"></i> Parte 1: Repaso
+                </button>
+                <button class="btn btn-green" onclick="showPart('part2-game')">
+                    <i class="fas fa-puzzle-piece mr-3"></i> Parte 2: Juego de Cartas
+                </button>
+                <button class="btn btn-orange" onclick="showPart('part3-evaluation')">
+                    <i class="fas fa-flask mr-3"></i> Parte 3: Evaluación
+                </button>
+            </div>
+        </div>
+
+        <!-- Parte 1: Repaso de la Familia 2A -->
+        <div id="part1-review" class="hidden p-8 w-full max-w-4xl">
+            <h2 class="text-5xl font-extrabold text-gray-800 mb-10 tracking-tight">Repaso de la Familia 2A</h2>
+            <p class="text-lg text-gray-700 mb-8">
+                A continuación, se presenta una descripción visual de los elementos de la Familia 2A (Alcalinotérreos).
+                ¡Observa y aprende!
+            </p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
+                <!-- Element Cards -->
+                <div class="flex flex-col items-center p-6 bg-gradient-to-br from-blue-100 to-blue-200 rounded-xl shadow-lg">
+                    <h3 class="text-4xl font-bold text-blue-800">Be</h3>
+                    <p class="text-2xl text-blue-700">Berilio</p>
+                    <p class="text-lg text-gray-600">Periodo 2, Grupo 2</p>
+                </div>
+                <div class="flex flex-col items-center p-6 bg-gradient-to-br from-green-100 to-green-200 rounded-xl shadow-lg">
+                    <h3 class="text-4xl font-bold text-green-800">Mg</h3>
+                    <p class="text-2xl text-green-700">Magnesio</p>
+                    <p class="text-lg text-gray-600">Periodo 3, Grupo 2</p>
+                </div>
+                <div class="flex flex-col items-center p-6 bg-gradient-to-br from-red-100 to-red-200 rounded-xl shadow-lg">
+                    <h3 class="text-4xl font-bold text-red-800">Ca</h3>
+                    <p class="text-2xl text-red-700">Calcio</p>
+                    <p class="text-lg text-gray-600">Periodo 4, Grupo 2</p>
+                </div>
+                <div class="flex flex-col items-center p-6 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-xl shadow-lg">
+                    <h3 class="text-4xl font-bold text-yellow-800">Sr</h3>
+                    <p class="text-2xl text-yellow-700">Estroncio</p>
+                    <p class="text-lg text-gray-600">Periodo 5, Grupo 2</p>
+                </div>
+                <div class="flex flex-col items-center p-6 bg-gradient-to-br from-purple-100 to-purple-200 rounded-xl shadow-lg">
+                    <h3 class="text-4xl font-bold text-purple-800">Ba</h3>
+                    <p class="text-2xl text-purple-700">Bario</p>
+                    <p class="text-lg text-gray-600">Periodo 6, Grupo 2</p>
+                </div>
+                <div class="flex flex-col items-center p-6 bg-gradient-to-br from-pink-100 to-pink-200 rounded-xl shadow-lg">
+                    <h3 class="text-4xl font-bold text-pink-800">Ra</h3>
+                    <p class="text-2xl text-pink-700">Radio</p>
+                    <p class="text-lg text-gray-600">Periodo 7, Grupo 2</p>
+                </div>
+            </div>
+            <button class="btn btn-red" onclick="showPart('main-menu')">
+                <i class="fas fa-sign-out-alt mr-3"></i> Salir
+            </button>
+        </div>
+
+        <!-- Parte 2: Juego de Cartas -->
+        <div id="part2-game" class="hidden p-8 w-full">
+            <h2 class="text-5xl font-extrabold text-gray-800 mb-8 tracking-tight">Juego de Cartas</h2>
+            <p class="text-lg text-gray-700 mb-6">
+                Selecciona solo los elementos de la Familia 2A. Tienes 20 segundos y un máximo de 5 errores por intento.
+                ¡La calificación de 10 te lleva directo a la Parte 3!
+            </p>
+            <div class="flex justify-around items-center mb-6 text-2xl font-semibold text-gray-700">
+                <p>Tiempo: <span id="part2-timer" class="text-blue-600">20</span>s</p>
+                <p>Aciertos: <span id="part2-correct" class="text-green-600">0</span></p>
+                <p>Errores: <span id="part2-incorrect" class="text-red-600">0</span>/5</p>
+                <p>Intentos: <span id="part2-attempts" class="text-purple-600">1</span>/3</p>
+                <p>Puntuación: <span id="part2-score" class="text-yellow-600">0.0</span></p>
+            </div>
+            <div id="part2-message" class="text-xl font-bold mb-4 text-center"></div>
+            <div id="part2-cards-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-6 mb-8 justify-items-center">
+                <!-- Cards will be dynamically inserted here -->
+            </div>
+            <div class="flex justify-center space-x-4">
+                <button id="part2-start-button" class="btn btn-green-500" onclick="startPart2Game()">
+                    <i class="fas fa-play mr-3"></i> Iniciar Juego
+                </button>
+                <button id="part2-restart-button" class="btn btn-orange-500 hidden" onclick="resetPart2Game()">
+                    <i class="fas fa-redo mr-3"></i> Reiniciar Intento
+                </button>
+                <button id="part2-next-button" class="btn btn-purple-500 hidden" onclick="showPart('part3-evaluation')">
+                    <i class="fas fa-arrow-right mr-3"></i> Siguiente
+                </button>
+                <button id="part2-exit-button" class="btn btn-red-500" onclick="showPart('main-menu')">
+                    <i class="fas fa-sign-out-alt mr-3"></i> Salir
+                </button>
+            </div>
+            <p id="part2-highest-score" class="text-xl font-semibold text-gray-700 mt-4">Mejor Calificación: 0.0</p>
+        </div>
+
+        <!-- Parte 3: Evaluación de Reconocimiento -->
+        <div id="part3-evaluation" class="hidden p-8 w-full">
+            <h2 class="text-5xl font-extrabold text-gray-800 mb-8 tracking-tight">Evaluación de Reconocimiento</h2>
+            <p class="text-lg text-gray-700 mb-6">
+                Arrastra el nombre del elemento a su símbolo correspondiente. Tienes 40 segundos.
+            </p>
+            <div class="flex justify-around items-center mb-6 text-2xl font-semibold text-gray-700">
+                <p>Tiempo: <span id="part3-timer" class="text-blue-600">40</span>s</p>
+                <p>Aciertos: <span id="part3-correct" class="text-green-600">0</span></p>
+                <p>Errores: <span id="part3-incorrect" class="text-red-600">0</span></p>
+                <p>Puntuación: <span id="part3-score" class="text-yellow-600">0.0</span></p>
+            </div>
+            <div id="part3-message" class="text-xl font-bold mb-4 text-center"></div>
+
+            <div class="flex flex-col md:flex-row justify-center gap-10 mb-8">
+                <!-- Draggable Names -->
+                <div id="part3-names-container" class="flex flex-wrap justify-center gap-4 p-4 border rounded-xl bg-gray-50 shadow-inner">
+                    <h3 class="w-full text-2xl font-bold text-gray-700 mb-4">Nombres</h3>
+                    <!-- Names will be dynamically inserted here -->
+                </div>
+                <!-- Droppable Symbols -->
+                <div id="part3-symbols-container" class="flex flex-wrap justify-center gap-4 p-4 border rounded-xl bg-gray-50 shadow-inner">
+                    <h3 class="w-full text-2xl font-bold text-gray-700 mb-4">Símbolos</h3>
+                    <!-- Symbols (droppable areas) will be dynamically inserted here -->
+                </div>
+            </div>
+
+            <div class="flex justify-center space-x-4">
+                <button id="part3-start-button" class="btn btn-green-500" onclick="startPart3Evaluation()">
+                    <i class="fas fa-play mr-3"></i> Iniciar Evaluación
+                </button>
+                <button id="part3-restart-button" class="btn btn-orange-500 hidden" onclick="resetPart3Evaluation()">
+                    <i class="fas fa-redo mr-3"></i> Reiniciar Evaluación
+                </button>
+                <button id="part3-finish-button" class="btn btn-red-500 hidden" onclick="endPart3Evaluation()">
+                    <i class="fas fa-flag-checkered mr-3"></i> Finalizar
+                </button>
+                <button id="part3-exit-button" class="btn btn-red-500" onclick="showPart('main-menu')">
+                    <i class="fas fa-sign-out-alt mr-3"></i> Salir
+                </button>
+            </div>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" class="hidden p-8 w-full max-w-2xl">
+            <h2 class="text-5xl font-extrabold text-gray-800 mb-8 tracking-tight">¡Resultados!</h2>
+            <p class="text-2xl text-gray-700 mb-8">¡Felicidades por completar el juego!</p>
+            <div class="bg-gray-100 p-8 rounded-xl shadow-lg space-y-6 mb-10">
+                <p class="text-3xl font-bold text-blue-700">Calificación Parte 2: <span id="final-score-part2" class="text-blue-800">0.0</span></p>
+                <p class="text-3xl font-bold text-green-700">Calificación Parte 3: <span id="final-score-part3" class="text-green-800">0.0</span></p>
+            </div>
+            <button class="btn btn-red" onclick="showPart('main-menu')">
+                <i class="fas fa-home mr-3"></i> Volver al Menú Principal
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Global game state variables
+        const elements2A = [
+            { symbol: "Be", name: "Berilio" },
+            { symbol: "Mg", name: "Magnesio" },
+            { symbol: "Ca", name: "Calcio" },
+            { symbol: "Sr", name: "Estroncio" },
+            { symbol: "Ba", name: "Bario" },
+            { symbol: "Ra", name: "Radio" }
+        ];
+
+        // Other elements for mixing in Part 2
+        const otherElements = [
+            { symbol: "Na", name: "Sodio" }, { symbol: "K", name: "Potasio" },
+            { symbol: "Al", name: "Aluminio" }, { symbol: "Si", name: "Silicio" },
+            { symbol: "N", name: "Nitrógeno" }, { symbol: "O", name: "Oxígeno" },
+            { symbol: "F", name: "Flúor" }, { symbol: "Cl", name: "Cloro" },
+            { symbol: "He", name: "Helio" }, { symbol: "Ne", name: "Neón" },
+            { symbol: "Ar", name: "Argón" }, { symbol: "Li", name: "Litio" },
+            { symbol: "B", name: "Boro" }, { symbol: "C", name: "Carbono" },
+            { symbol: "P", name: "Fósforo" }, { symbol: "S", name: "Azufre" }
+        ];
+
+        let currentPart = 'main-menu';
+        let part2GameData = {
+            timer: 20,
+            interval: null,
+            correct: 0,
+            incorrect: 0,
+            attempts: 0,
+            score: 0.0,
+            highestScore: 0.0,
+            maxErrors: 5,
+            maxAttempts: 3,
+            cardsGenerated: [] // To keep track of elements generated to avoid repetition
+        };
+        let part3GameData = {
+            timer: 40,
+            interval: null,
+            correct: 0,
+            incorrect: 0,
+            score: 0.0,
+            matchesMade: 0,
+            totalMatches: elements2A.length,
+            matchStatus: {} // To store the status of each match
+        };
+
+        // Function to show a specific part of the game and hide others
+        function showPart(partId) {
+            const parts = ['main-menu', 'part1-review', 'part2-game', 'part3-evaluation', 'results-screen'];
+            parts.forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(partId).classList.remove('hidden');
+            currentPart = partId;
+
+            // Specific initialization logic for each part
+            if (partId === 'part2-game') {
+                // Ensure initial state for Part 2 is clean
+                document.getElementById('part2-start-button').classList.remove('hidden');
+                document.getElementById('part2-restart-button').classList.add('hidden');
+                document.getElementById('part2-next-button').classList.add('hidden');
+                document.getElementById('part2-message').textContent = '';
+                document.getElementById('part2-cards-container').innerHTML = ''; // Clear cards
+                updatePart2ScoreDisplay(); // Reset score display
+            } else if (partId === 'part3-evaluation') {
+                // Ensure initial state for Part 3 is clean
+                document.getElementById('part3-start-button').classList.remove('hidden');
+                document.getElementById('part3-restart-button').classList.add('hidden');
+                document.getElementById('part3-finish-button').classList.add('hidden');
+                document.getElementById('part3-message').textContent = '';
+                document.getElementById('part3-names-container').innerHTML = '<h3 class="w-full text-2xl font-bold text-gray-700 mb-4">Nombres</h3>';
+                document.getElementById('part3-symbols-container').innerHTML = '<h3 class="w-full text-2xl font-bold text-gray-700 mb-4">Símbolos</h3>';
+                updatePart3ScoreDisplay(); // Reset score display
+            } else if (partId === 'results-screen') {
+                document.getElementById('final-score-part2').textContent = part2GameData.highestScore.toFixed(1);
+                document.getElementById('final-score-part3').textContent = part3GameData.score.toFixed(1);
+            }
+        }
+
+        // --- Part 2: Card Game Logic ---
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function generatePart2Cards() {
+            let allElements = [...elements2A, ...otherElements];
+            shuffleArray(allElements);
+
+            // Ensure no repetition across generated sets
+            let uniqueElements = [];
+            let i = 0;
+            while (uniqueElements.length < 12 && i < allElements.length) {
+                if (!part2GameData.cardsGenerated.some(el => el.symbol === allElements[i].symbol)) {
+                    uniqueElements.push(allElements[i]);
+                }
+                i++;
+            }
+            // If we run out of unique elements, reset the generated list (less likely for 12 cards from 22+)
+            if (uniqueElements.length < 12) {
+                part2GameData.cardsGenerated = [];
+                // Recursively call to try again with a fresh pool if needed, though this shouldn't be necessary with enough elements
+                return generatePart2Cards();
+            }
+
+            // Select 12 cards for the current round
+            const currentRoundCards = uniqueElements.slice(0, 12);
+
+            // Add these to the generated list for future checks
+            part2GameData.cardsGenerated = part2GameData.cardsGenerated.concat(currentRoundCards);
+
+            shuffleArray(currentRoundCards); // Shuffle again for card display order
+
+            const container = document.getElementById('part2-cards-container');
+            container.innerHTML = ''; // Clear previous cards
+
+            currentRoundCards.forEach(element => {
+                const is2A = elements2A.some(el => el.symbol === element.symbol);
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.setAttribute('data-symbol', element.symbol);
+                card.setAttribute('data-is2a', is2A);
+                card.innerHTML = `<span class="text-5xl font-bold">${element.symbol}</span><span class="text-xl">${element.name}</span>`;
+                card.onclick = handleCardClick;
+                container.appendChild(card);
+            });
+        }
+
+        function handleCardClick(event) {
+            const card = event.currentTarget;
+            if (card.classList.contains('correct') || card.classList.contains('incorrect')) {
+                return; // Already clicked
+            }
+
+            const is2A = card.getAttribute('data-is2a') === 'true';
+
+            if (is2A) {
+                card.classList.add('correct');
+                part2GameData.correct++;
+            } else {
+                card.classList.add('incorrect');
+                part2GameData.incorrect++;
+            }
+            updatePart2ScoreDisplay();
+
+            if (part2GameData.incorrect >= part2GameData.maxErrors) {
+                endPart2Attempt(false); // End attempt due to too many errors
+            }
+        }
+
+        function updatePart2ScoreDisplay() {
+            part2GameData.score = Math.max(0, part2GameData.correct - part2GameData.incorrect); // Score cannot be negative
+            document.getElementById('part2-correct').textContent = part2GameData.correct;
+            document.getElementById('part2-incorrect').textContent = part2GameData.incorrect;
+            document.getElementById('part2-score').textContent = part2GameData.score.toFixed(1);
+        }
+
+        function startPart2Game() {
+            part2GameData.attempts++;
+            if (part2GameData.attempts > part2GameData.maxAttempts) {
+                document.getElementById('part2-message').textContent = 'Has agotado tus intentos. ¡Inténtalo de nuevo desde el menú principal!';
+                document.getElementById('part2-start-button').classList.add('hidden');
+                document.getElementById('part2-restart-button').classList.add('hidden');
+                document.getElementById('part2-next-button').classList.remove('hidden'); // Allow to proceed or exit
+                return;
+            }
+
+            part2GameData.correct = 0;
+            part2GameData.incorrect = 0;
+            part2GameData.timer = 20;
+            document.getElementById('part2-timer').textContent = part2GameData.timer;
+            document.getElementById('part2-message').textContent = '';
+            document.getElementById('part2-attempts').textContent = part2GameData.attempts;
+            updatePart2ScoreDisplay();
+
+            generatePart2Cards();
+            document.getElementById('part2-start-button').classList.add('hidden');
+            document.getElementById('part2-restart-button').classList.remove('hidden');
+            document.getElementById('part2-exit-button').classList.remove('hidden'); // Keep exit button visible
+            document.getElementById('part2-next-button').classList.add('hidden'); // Hide next button during game
+
+            // Disable clicking cards before timer starts
+            document.querySelectorAll('#part2-cards-container .card').forEach(card => {
+                card.style.pointerEvents = 'auto'; // Re-enable interaction
+                card.classList.remove('correct', 'incorrect'); // Clear previous states
+            });
+
+            if (part2GameData.interval) {
+                clearInterval(part2GameData.interval);
+            }
+            part2GameData.interval = setInterval(() => {
+                part2GameData.timer--;
+                document.getElementById('part2-timer').textContent = part2GameData.timer;
+                if (part2GameData.timer <= 0) {
+                    endPart2Attempt(false); // Time's up
+                }
+            }, 1000);
+        }
+
+        function endPart2Attempt(manualEnd) {
+            clearInterval(part2GameData.interval);
+            part2GameData.interval = null;
+
+            // Disable all cards after attempt ends
+            document.querySelectorAll('#part2-cards-container .card').forEach(card => {
+                card.style.pointerEvents = 'none';
+            });
+
+            const finalScore = part2GameData.score;
+            part2GameData.highestScore = Math.max(part2GameData.highestScore, finalScore);
+            document.getElementById('part2-highest-score').textContent = `Mejor Calificación: ${part2GameData.highestScore.toFixed(1)}`;
+
+            if (finalScore >= 10) {
+                document.getElementById('part2-message').textContent = '¡Felicidades! ¡Calificación de 10! Pasas a la Parte 3.';
+                document.getElementById('part2-next-button').classList.remove('hidden');
+                document.getElementById('part2-restart-button').classList.add('hidden');
+            } else if (part2GameData.attempts < part2GameData.maxAttempts) {
+                document.getElementById('part2-message').textContent = `Intento terminado. Tu calificación: ${finalScore.toFixed(1)}. ¡Inténtalo de nuevo!`;
+                document.getElementById('part2-start-button').classList.remove('hidden'); // Show start button for next attempt
+                document.getElementById('part2-restart-button').classList.add('hidden'); // Hide restart button
+                document.getElementById('part2-next-button').classList.add('hidden');
+            } else {
+                document.getElementById('part2-message').textContent = `Has agotado tus intentos. Mejor calificación: ${part2GameData.highestScore.toFixed(1)}.`;
+                document.getElementById('part2-start-button').classList.add('hidden');
+                document.getElementById('part2-restart-button').classList.add('hidden');
+                document.getElementById('part2-next-button').classList.remove('hidden'); // Allow user to proceed to results or next part
+            }
+        }
+
+        function resetPart2Game() {
+            clearInterval(part2GameData.interval);
+            part2GameData.interval = null;
+            part2GameData.attempts--; // Decrement attempt count to allow re-playing the current attempt
+            startPart2Game(); // Restart the current attempt
+        }
+
+        // --- Part 3: Evaluation Logic ---
+        let draggedItem = null;
+
+        function createDraggableNames() {
+            const container = document.getElementById('part3-names-container');
+            container.innerHTML = '<h3 class="w-full text-2xl font-bold text-gray-700 mb-4">Nombres</h3>'; // Clear and add title
+
+            let shuffledNames = elements2A.map(e => ({ name: e.name, symbol: e.symbol }));
+            shuffleArray(shuffledNames);
+
+            shuffledNames.forEach(element => {
+                const div = document.createElement('div');
+                div.classList.add('draggable-item', 'bg-blue-200', 'text-blue-800');
+                div.setAttribute('draggable', 'true');
+                div.setAttribute('data-name', element.name);
+                div.setAttribute('data-symbol', element.symbol); // Store symbol for matching
+                div.textContent = element.name;
+                div.addEventListener('dragstart', (e) => {
+                    draggedItem = e.target;
+                    e.dataTransfer.setData('text/plain', element.symbol); // Set data to be transferred
+                    e.target.classList.add('opacity-50');
+                });
+                div.addEventListener('dragend', (e) => {
+                    e.target.classList.remove('opacity-50');
+                    draggedItem = null;
+                });
+                container.appendChild(div);
+            });
+        }
+
+        function createDroppableSymbols() {
+            const container = document.getElementById('part3-symbols-container');
+            container.innerHTML = '<h3 class="w-full text-2xl font-bold text-gray-700 mb-4">Símbolos</h3>'; // Clear and add title
+
+            let shuffledSymbols = elements2A.map(e => ({ symbol: e.symbol, name: e.name }));
+            shuffleArray(shuffledSymbols);
+
+            shuffledSymbols.forEach(element => {
+                const div = document.createElement('div');
+                div.classList.add('droppable-area', 'bg-gray-100', 'text-gray-700');
+                div.setAttribute('data-symbol', element.symbol); // This is the target symbol
+                div.textContent = element.symbol;
+                div.addEventListener('dragover', (e) => {
+                    e.preventDefault(); // Allow drop
+                    div.classList.add('drag-over');
+                });
+                div.addEventListener('dragleave', (e) => {
+                    div.classList.remove('drag-over');
+                });
+                div.addEventListener('drop', handleDrop);
+                container.appendChild(div);
+            });
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            const droppableArea = event.currentTarget;
+            droppableArea.classList.remove('drag-over');
+
+            if (!draggedItem) return; // No item being dragged
+
+            const draggedSymbol = draggedItem.getAttribute('data-symbol');
+            const targetSymbol = droppableArea.getAttribute('data-symbol');
+
+            if (part3GameData.matchStatus[targetSymbol]) {
+                document.getElementById('part3-message').textContent = '¡Este símbolo ya ha sido emparejado!';
+                return; // Already matched
+            }
+
+            if (draggedSymbol === targetSymbol) {
+                part3GameData.correct++;
+                droppableArea.classList.add('correct-match');
+                droppableArea.classList.remove('incorrect-match');
+                droppableArea.textContent = `${targetSymbol}: ${draggedItem.getAttribute('data-name')}`; // Show name with symbol
+                draggedItem.remove(); // Remove the name element
+                part3GameData.matchesMade++;
+                part3GameData.matchStatus[targetSymbol] = 'correct';
+            } else {
+                part3GameData.incorrect++;
+                droppableArea.classList.add('incorrect-match');
+                droppableArea.classList.remove('correct-match');
+                document.getElementById('part3-message').textContent = '¡Incorrecto! Intenta de nuevo.';
+                // Briefly show incorrect, then reset for next attempt if user wants to retry with this droppable
+                setTimeout(() => {
+                    droppableArea.classList.remove('incorrect-match');
+                }, 1000);
+            }
+            updatePart3ScoreDisplay();
+
+            if (part3GameData.matchesMade === part3GameData.totalMatches) {
+                endPart3Evaluation(true); // All matched
+            }
+        }
+
+        function updatePart3ScoreDisplay() {
+            part3GameData.score = Math.max(0, part3GameData.correct - part3GameData.incorrect);
+            document.getElementById('part3-correct').textContent = part3GameData.correct;
+            document.getElementById('part3-incorrect').textContent = part3GameData.incorrect;
+            document.getElementById('part3-score').textContent = part3GameData.score.toFixed(1);
+        }
+
+        function startPart3Evaluation() {
+            part3GameData.correct = 0;
+            part3GameData.incorrect = 0;
+            part3GameData.timer = 40;
+            part3GameData.matchesMade = 0;
+            part3GameData.matchStatus = {}; // Reset match status
+            document.getElementById('part3-timer').textContent = part3GameData.timer;
+            document.getElementById('part3-message').textContent = '';
+            updatePart3ScoreDisplay();
+
+            createDraggableNames();
+            createDroppableSymbols();
+
+            document.getElementById('part3-start-button').classList.add('hidden');
+            document.getElementById('part3-restart-button').classList.remove('hidden');
+            document.getElementById('part3-finish-button').classList.remove('hidden');
+            document.getElementById('part3-exit-button').classList.remove('hidden');
+
+            if (part3GameData.interval) {
+                clearInterval(part3GameData.interval);
+            }
+            part3GameData.interval = setInterval(() => {
+                part3GameData.timer--;
+                document.getElementById('part3-timer').textContent = part3GameData.timer;
+                if (part3GameData.timer <= 0) {
+                    endPart3Evaluation(false); // Time's up
+                }
+            }, 1000);
+        }
+
+        function endPart3Evaluation(allMatched) {
+            clearInterval(part3GameData.interval);
+            part3GameData.interval = null;
+
+            // Disable further interaction
+            document.querySelectorAll('#part3-names-container .draggable-item').forEach(item => item.setAttribute('draggable', 'false'));
+            document.querySelectorAll('#part3-symbols-container .droppable-area').forEach(area => {
+                area.removeEventListener('drop', handleDrop);
+                area.removeEventListener('dragover', (e) => e.preventDefault());
+                area.removeEventListener('dragleave', (e) => {});
+            });
+
+            const finalScore = part3GameData.score;
+            document.getElementById('part3-message').textContent = `Evaluación terminada. Tu calificación final: ${finalScore.toFixed(1)}.`;
+
+            // Hide game buttons, show options to proceed
+            document.getElementById('part3-start-button').classList.add('hidden');
+            document.getElementById('part3-restart-button').classList.add('hidden');
+            document.getElementById('part3-finish-button').classList.add('hidden'); // Evaluation is done, finish button no longer needed
+            document.getElementById('part3-exit-button').classList.remove('hidden'); // Ensure exit is visible
+
+            // Automatically show results screen
+            setTimeout(() => {
+                showPart('results-screen');
+            }, 1500);
+        }
+
+        function resetPart3Evaluation() {
+            clearInterval(part3GameData.interval);
+            part3GameData.interval = null;
+            startPart3Evaluation(); // Restart the evaluation
+        }
+
+        // Initial setup to show main menu on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            showPart('main-menu');
+        });
+    </script>
+</body>
+</html>
